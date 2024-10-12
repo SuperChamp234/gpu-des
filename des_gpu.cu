@@ -15,6 +15,19 @@
 des_result des_gpu_crack(uint64_t message, uint64_t cipher, uint64_t begin, 
         uint64_t limit, size_t num_of_blocks, size_t block_size)
 {
+    int deviceCount = 0;
+    checkCudaErrors(cudaGetDeviceCount(&deviceCount));
+
+    if(deviceCount == 0)
+    {
+        fprintf(stderr, "No CUDA devices found.\n");
+        exit(1);
+    } else {
+        printf("Found %d CUDA devices.\n", deviceCount);
+    }
+
+    checkCudaErrors(cudaSetDevice(0));
+
     bool h_done, *d_done;
     checkCudaErrors(cudaMalloc((void**)&d_done,sizeof(bool)));
     checkCudaErrors(cudaMemset(d_done, 0, sizeof(bool)));
@@ -35,6 +48,7 @@ des_result des_gpu_crack(uint64_t message, uint64_t cipher, uint64_t begin,
     cudaEventSynchronize(start);
 
     // Run kernel.
+    printf("Running kernel with %d blocks and %d threads per block.\n", num_of_blocks, block_size);
     des_gpu_crack_kernel<<<num_of_blocks, block_size>>>(message, cipher,
 		    begin,limit, d_done, d_key, d_counters);
 
